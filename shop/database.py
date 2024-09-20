@@ -19,16 +19,16 @@ class Products(Base):
     description = Column(String)
     price = Column(Integer)
     category = Column(String)
+    quantity_in_stock = Column(Integer)
 
 
 class Buyers(Base):
     __tablename__ = 'buyers'
 
     id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String)
-    last_name = Column(String)
+    username = Column(String)
+    budget = Column(Integer)
     hashed_password = Column(String)
-    nationality = Column(String)
 
 
 class Basket(Base):
@@ -36,6 +36,7 @@ class Basket(Base):
     id = Column(Integer, primary_key=True, index=True)
     buyer_id = Column(Integer, ForeignKey('buyers.id'))
     product_id = Column(Integer, ForeignKey('products.id'))
+    quantity = Column(Integer, default=1)
 
     buyer = relationship("Buyers", backref="cart_items")
     product = relationship("Products", backref="cart_items")

@@ -19,7 +19,9 @@ def get_db():
         db.close()
 
 
-router = APIRouter()
+router = APIRouter(
+    tags=['register']
+)
 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
@@ -32,10 +34,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class CreateUserRequest(BaseModel):
     username: str
-    first_name: str
-    last_name: str
     password: str
-    nationality: str
 
 
 def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None):
@@ -54,7 +53,7 @@ def get_password_hash(password: str):
 
 
 def authenticate_user(username: str, password: str, db: Session):
-    user = db.query(Buyers).filter(Buyers.first_name == username).first()
+    user = db.query(Buyers).filter(Buyers.username == username).first()
     if not user:
         return False
     if not pwd_context.verify(password, user.hashed_password):
@@ -75,7 +74,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception
-    user = db.query(Buyers).filter(Buyers.first_name == username).first()
+    user = db.query(Buyers).filter(Buyers.username == username).first()
     if user is None:
         raise credentials_exception
     return user
@@ -94,24 +93,22 @@ async def login_for_access_token(
         )
     access_token_expires = datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.first_name}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/sign_up", status_code=status.HTTP_201_CREATED)
 async def create_user(db: Session = Depends(get_db), user_data: CreateUserRequest = Depends()):
-    existing_user = db.query(Buyers).filter(Buyers.first_name == user_data.username).first()
+    existing_user = db.query(Buyers).filter(Buyers.username == user_data.username).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already registered")
 
     hashed_password = pwd_context.hash(user_data.password)
 
     new_user = Buyers(
-        first_name=user_data.username,
+        username=user_data.username,
         hashed_password=hashed_password,
-        last_name=user_data.last_name,
-        nationality=user_data.nationality,
     )
     db.add(new_user)
     db.commit()

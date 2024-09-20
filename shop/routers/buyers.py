@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from database import SessionLocal, Buyers
-from .auth import get_password_hash
+from .auth import get_current_user
 
 router = APIRouter(
     tags=['buyers'],
@@ -20,50 +20,64 @@ def get_db():
 
 
 class BuyerCreate(BaseModel):
-    first_name: str
-    last_name: str
+    username: int
+    budget: int
     hashed_password: int
-    nationality: str
 
 
 @router.get("/")
-def read_all(db: Session = Depends(get_db)):
-    people = db.query(Buyers).all()
+def read_all(db: Session = Depends(get_db), current_user: Buyers = Depends(get_current_user)):
+    if current_user:
+        people = db.query(Buyers).all()
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return people
 
 
-@router.get("/{buyers_nationality}")
-def find_by_nationality(buyers_nationality: str, db: Session = Depends(get_db)):
-    filter_nationality = db.query(Buyers).filter(Buyers.nationality == buyers_nationality).all()
+@router.get("/{buyers_id}")
+def find_by_id(buyers_id: int, db: Session = Depends(get_db),
+                        current_user: Buyers = Depends(get_current_user)):
+    if current_user:
+        filter_nationality = db.query(Buyers).filter(Buyers.id == buyers_id).all()
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return filter_nationality
 
 
 @router.post('/create')
-def create_buyer(something: BuyerCreate, db: Session = Depends(get_db)):
-    anything = Buyers(**something.dict())
-    db.add(anything)
-    db.commit()
-    db.refresh(anything)
+def create_buyer(something: BuyerCreate, db: Session = Depends(get_db),
+                 current_user: Buyers = Depends(get_current_user)):
+    if current_user:
+        anything = Buyers(**something.dict())
+        db.add(anything)
+        db.commit()
+        db.refresh(anything)
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return anything
 
 
 @router.put('/{rocket}')
-def put_buyer(rocket: int, bomb: BuyerCreate, db: Session = Depends(get_db)):
-    helicopter = db.query(Buyers).filter(Buyers.id == rocket).first()
-
-    helicopter.first_name = bomb.first_name
-    helicopter.last_name = bomb.last_name
-    helicopter.hashed_password = bomb.hashed_password
-    helicopter.nationality = bomb.nationality
-
-    db.add(helicopter)
-    db.commit()
+def put_buyer(rocket: int, bomb: BuyerCreate, db: Session = Depends(get_db),
+              current_user: Buyers = Depends(get_current_user)):
+    if current_user:
+        helicopter = db.query(Buyers).filter(Buyers.id == rocket).first()
+        helicopter.username = bomb.username
+        helicopter.hashed_password = bomb.hashed_password
+        helicopter.budget = bomb.budget
+        db.add(helicopter)
+        db.commit()
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return {"message": "Item updated", "item": helicopter}
 
 
 @router.delete('/{del_buyer}')
-def delete_people(del_buyer: int, db: Session = Depends(get_db)):
-    kamaz = db.query(Buyers).filter(Buyers.id == del_buyer).first()
-    db.delete(kamaz)
-    db.commit()
+def delete_people(del_buyer: int, db: Session = Depends(get_db), current_user: Buyers = Depends(get_current_user)):
+    if current_user:
+        kamaz = db.query(Buyers).filter(Buyers.id == del_buyer).first()
+        db.delete(kamaz)
+        db.commit()
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return {"message": "Item deleted"}
