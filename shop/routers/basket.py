@@ -21,10 +21,8 @@ def add_to_basket(buyer_id: int, product_id: int, db: Session = Depends(get_db),
     if current_user:
         existing_item = db.query(Basket).filter_by(buyer_id=buyer_id, product_id=product_id).first()
         if existing_item:
-            # Item already in basket, increment quantity
             existing_item.quantity += 1
         else:
-            # New item, add to basket with quantity 1
             new_item = Basket(buyer_id=buyer_id, product_id=product_id, quantity=1)
             db.add(new_item)
         db.commit()
@@ -48,7 +46,7 @@ def show_basket(buyer_id: int, db: Session = Depends(get_db), current_user: Buye
         basket_data.append({
             "product_name": product.name,
             "product_id": product.id,
-            "quantity": item.quantity,  # Include quantity
+            "quantity": item.quantity,
             "price": product.price,
             "category": product.category,
             "description": product.description

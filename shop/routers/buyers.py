@@ -20,9 +20,9 @@ def get_db():
 
 
 class BuyerCreate(BaseModel):
-    username: int
+    username: str
     budget: int
-    hashed_password: int
+    hashed_password: str
 
 
 @router.get("/")
@@ -36,7 +36,7 @@ def read_all(db: Session = Depends(get_db), current_user: Buyers = Depends(get_c
 
 @router.get("/{buyers_id}")
 def find_by_id(buyers_id: int, db: Session = Depends(get_db),
-                        current_user: Buyers = Depends(get_current_user)):
+               current_user: Buyers = Depends(get_current_user)):
     if current_user:
         filter_nationality = db.query(Buyers).filter(Buyers.id == buyers_id).all()
     else:
