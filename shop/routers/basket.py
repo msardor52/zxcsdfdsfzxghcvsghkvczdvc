@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import Buyers, Basket, SessionLocal, Products
@@ -16,14 +17,14 @@ def get_db():
 
 
 @router.post("/buyers/{buyer_id}/basket")
-def add_to_basket(buyer_id: int, product_id: int, db: Session = Depends(get_db),
+def add_to_basket(buyer_id: int, product_id: int, quantity: int, db: Session = Depends(get_db),
                   current_user: Buyers = Depends(get_current_user)):
     if current_user:
         existing_item = db.query(Basket).filter_by(buyer_id=buyer_id, product_id=product_id).first()
         if existing_item:
-            existing_item.quantity += 1
+            existing_item.quantity += quantity
         else:
-            new_item = Basket(buyer_id=buyer_id, product_id=product_id, quantity=1)
+            new_item = Basket(buyer_id=buyer_id, product_id=product_id, quantity=quantity)
             db.add(new_item)
         db.commit()
         return {"message": "Added to basket"}
@@ -55,7 +56,7 @@ def show_basket(buyer_id: int, db: Session = Depends(get_db), current_user: Buye
 
 
 @router.delete("/buyers/{buyer_id}/basket/{product_id}")
-def remove_from_cart(buyer_id: int, product_id: int, db: Session = Depends(get_db),
+def remove_from_cart(buyer_id: int, product_id: int, quantity: int, db: Session = Depends(get_db),
                      current_user: Buyers = Depends(get_current_user)):
     if current_user.id != buyer_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to modify this basket")
@@ -64,9 +65,9 @@ def remove_from_cart(buyer_id: int, product_id: int, db: Session = Depends(get_d
     if item_to_remove is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found in basket")
 
-    if item_to_remove.quantity > 1:
-        item_to_remove.quantity -= 1
-    else:
+    if quantity == 0 or quantity >= item_to_remove.quantity:
         db.delete(item_to_remove)
+    else:
+        item_to_remove.quantity -= quantity
     db.commit()
-    return {"message": "Deleted"}
+    return {"message": "Item removed from basket"}
