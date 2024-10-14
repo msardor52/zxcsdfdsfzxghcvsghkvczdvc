@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from database import Buyers, SessionLocal
+from shop.database import SessionLocal, Buyers
 
 
 def get_db():

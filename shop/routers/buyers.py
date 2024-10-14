@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from database import SessionLocal, Buyers
 from .auth import get_current_user
+from ..database import Buyers, SessionLocal
 
 router = APIRouter(
     tags=['buyers'],

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+
 from sqlalchemy.orm import Session
 
-from database import Buyers, Basket, SessionLocal, Products
 from .auth import get_current_user
+from ..database import Buyers, SessionLocal, Products, Basket
 
 router = APIRouter(tags=['basket'])
 
