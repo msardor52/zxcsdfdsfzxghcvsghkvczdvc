@@ -11,3 +11,8 @@ app.include_router(buyers.router)
 app.include_router(products.router)
 app.include_router(basket.router)
 app.include_router(auth.router)
+
+
+@app.get("/healthy")
+def health_check():
+    return {"status": "Healthy"}
